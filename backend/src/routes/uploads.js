@@ -215,6 +215,9 @@ uploadsRouter.get('/:id/download', async (req, res) => {
       `inline; filename="${encodeURIComponent(file.original_name)}"`,
     )
 
+    // ✅ เพิ่มบรรทัดนี้ กัน Cloudflare/Render CDN cache response ค้าง
+    res.setHeader('Cache-Control', 'no-store')
+
     return res.send(file.data)
   } catch (error) {
     console.error('Download error:', error)
