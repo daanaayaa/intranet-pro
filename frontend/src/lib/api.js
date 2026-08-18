@@ -157,142 +157,136 @@ export const api = {
   // uploads
   // -------------------------------------------------------
 
-  listUploads: async (folder) => {
-    const data = await request(
-      `/api/uploads${
-        folder
-          ? `?folder=${encodeURIComponent(folder)}`
-          : ''
-      }`,
-    )
+// -------------------------------------------------------
+// uploads
+// -------------------------------------------------------
 
-    // แปลง URL ของไฟล์จาก Database ให้เป็น Backend URL
-    return Array.isArray(data)
-      ? data.map((item) => ({
-          ...item,
-          url: getUploadUrl(item.url),
-        }))
-      : data
-  },
+listUploads: async (folder) => {
+  const data = await request(
+    `/api/uploads${
+      folder
+        ? `?folder=${encodeURIComponent(folder)}`
+        : ''
+    }`,
+  )
 
-  uploadFile: async (folder, file) => {
+  return Array.isArray(data)
+    ? data.map((item) => ({
+        ...item,
+        url: getUploadUrl(item.url),
+      }))
+    : data
+},
+
+uploadFile: async (folder, file) => {
+  const form = new FormData()
+
+  form.append('folder', folder)
+  form.append('file', file)
+
+  const data = await request('/api/uploads', {
+    method: 'POST',
+    body: form,
+  })
+
+  return data
+    ? {
+        ...data,
+        url: getUploadUrl(data.url),
+      }
+    : data
+},
+
+uploadFileWithProgress: (folder, file, onProgress) =>
+  new Promise((resolve, reject) => {
     const form = new FormData()
 
     form.append('folder', folder)
     form.append('file', file)
 
-    const data = await request('/api/uploads', {
-      method: 'POST',
-      body: form,
-    })
+    const xhr = new XMLHttpRequest()
 
-    // แปลง URL ที่ Backend ส่งกลับมา
-    return data
-      ? {
-          ...data,
-          url: getUploadUrl(data.url),
-        }
-      : data
-  },
+    xhr.open(
+      'POST',
+      `${API_URL}/api/uploads`,
+    )
 
-  // -------------------------------------------------------
-  // upload พร้อม progress
-  // -------------------------------------------------------
+    const token = getToken()
 
-  uploadFileWithProgress: (folder, file, onProgress) =>
-    new Promise((resolve, reject) => {
-      const form = new FormData()
-
-      form.append('folder', folder)
-      form.append('file', file)
-
-      const xhr = new XMLHttpRequest()
-
-      xhr.open(
-        'POST',
-        `${API_URL}/api/uploads`,
+    if (token) {
+      xhr.setRequestHeader(
+        'Authorization',
+        `Bearer ${token}`,
       )
+    }
 
-      const token = getToken()
-
-      if (token) {
-        xhr.setRequestHeader(
-          'Authorization',
-          `Bearer ${token}`,
-        )
-      }
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) {
-          onProgress(
-            Math.round(
-              (e.loaded / e.total) * 100,
-            ),
-          )
-        }
-      }
-
-      xhr.onload = () => {
-        if (
-          xhr.status >= 200 &&
-          xhr.status < 300
-        ) {
-          try {
-            const data = JSON.parse(
-              xhr.responseText,
-            )
-
-            resolve(
-              data
-                ? {
-                    ...data,
-                    url: getUploadUrl(data.url),
-                  }
-                : data,
-            )
-          } catch {
-            resolve(null)
-          }
-
-          return
-        }
-
-        let message = `อัปโหลดไม่สำเร็จ (${xhr.status})`
-
-        try {
-          const body = JSON.parse(
-            xhr.responseText,
-          )
-
-          if (body?.error) {
-            message = body.error
-          }
-        } catch {
-          // ignore
-        }
-
-        reject(new Error(message))
-      }
-
-      xhr.onerror = () => {
-        reject(
-          new Error(
-            'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ',
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(
+          Math.round(
+            (e.loaded / e.total) * 100,
           ),
         )
       }
+    }
 
-      xhr.send(form)
-    }),
+    xhr.onload = () => {
+      if (
+        xhr.status >= 200 &&
+        xhr.status < 300
+      ) {
+        try {
+          const data = JSON.parse(xhr.responseText)
 
-  deleteUpload: (id) =>
-    request(`/api/uploads/${id}`, {
-      method: 'DELETE',
-    }),
+          resolve(
+            data
+              ? {
+                  ...data,
+                  url: getUploadUrl(data.url),
+                }
+              : data,
+          )
+        } catch {
+          resolve(null)
+        }
 
-  // URL สำหรับเปิด/ดาวน์โหลดไฟล์
-  downloadUrl: (id) =>
-    `${API_URL}/api/uploads/${id}/download`,
+        return
+      }
+
+      let message = `อัปโหลดไม่สำเร็จ (${xhr.status})`
+
+      try {
+        const body = JSON.parse(xhr.responseText)
+
+        if (body?.error) {
+          message = body.error
+        }
+      } catch {
+        // ignore
+      }
+
+      reject(new Error(message))
+    }
+
+    xhr.onerror = () => {
+      reject(
+        new Error(
+          'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ',
+        ),
+      )
+    }
+
+    xhr.send(form)
+  }),
+
+deleteUpload: (id) =>
+  request(`/api/uploads/${id}`, {
+    method: 'DELETE',
+  }),
+
+// ใช้ URL จาก Database โดยตรง
+downloadUrl: (url) =>
+  getUploadUrl(url),
 
   // -------------------------------------------------------
   // users & roles
