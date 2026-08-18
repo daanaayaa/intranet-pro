@@ -17,7 +17,7 @@ import { HEALTHCARE_PARTNERS } from './Partnerhealthcarelist'
 import { CLINIC_NURSE_PARTNERS } from './Clinicnursepartners'
 import { PRE_EMPLOYMENT_HEALTH_CHECK_PARTNERS } from './Preemploymenthealthcheckpartners'
 import { ANNUAL_HEALTH_CHECK_PARTNERS } from './Annualhealthcheckpartners'
-import { PRE_INSURANCE_HEALTH_CHECK_PARTNERS } from './Annualhealthcheckpartners'
+import { PRE_INSURANCE_HEALTH_CHECK_PARTNERS } from "./Preinsurancehealthcheckpartners";
 import { SCHOOL_GROUP_INSURANCE_PARTNERS } from './Schoolpartners'
 import { OPD_PED_PACKAGE_ITEMS, OPD_GYN_PACKAGE_ITEMS } from './Promopackageitems'
 
