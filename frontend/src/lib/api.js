@@ -20,15 +20,29 @@ const TOKEN_KEY = 'intranet_admin_token'
 // ถ้าเป็น absolute URL อยู่แล้ว จะไม่เติม API_URL ซ้ำ
 // ---------------------------------------------------------
 export function getUploadUrl(url) {
-  if (!url) return ''
+  if (!url || typeof url !== 'string') return ''
 
-  // ถ้าเป็น URL เต็มอยู่แล้ว
-  if (/^https?:\/\//i.test(url)) {
-    return url
+  const trimmedUrl = url.trim()
+
+  // Base64
+  if (trimmedUrl.startsWith('data:')) {
+    return trimmedUrl
   }
 
-  // รองรับ URL ที่อาจขึ้นต้นด้วย /
-  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
+  // Blob URL
+  if (trimmedUrl.startsWith('blob:')) {
+    return trimmedUrl
+  }
+
+  // URL เต็ม
+  if (/^https?:\/\//i.test(trimmedUrl)) {
+    return trimmedUrl
+  }
+
+  // URL relative จาก Backend
+  const normalizedUrl = trimmedUrl.startsWith('/')
+    ? trimmedUrl
+    : `/${trimmedUrl}`
 
   return `${API_URL}${normalizedUrl}`
 }
